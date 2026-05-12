@@ -1,34 +1,10 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Calendar, Clock, Plus, Trash2, LogOut, ChevronLeft, Mail, ShieldCheck, Loader2, CheckCircle2, AlertCircle, Cpu, Database, Filter, CalendarDays, Info, LayoutGrid, List, RefreshCw } from 'lucide-react';
-
-// ==========================================
-// 類型定義 (TypeScript Interfaces)
-// ==========================================
-
-interface UserData {
-  token: string;
-  email: string;
-  name: string;
-}
-
-interface Slot {
-  uid: string;
-  host: string;
-  hostName: string; 
-  start: string;
-  end: string;
-  status: 'Open' | 'Booked' | 'Cancelled';
-  guest: string;
-  guestName: string; 
-}
-
-interface MessageState {
-  type: 'success' | 'error';
-  text: string;
-}
-
-type ViewType = 'landing' | 'login' | 'otp' | 'dashboard' | 'add-slots';
-type LayoutType = 'list' | 'grid';
+import { Calendar, Clock, Plus, Trash2, ChevronLeft, Mail, ShieldCheck, Loader2, Cpu, Database, Filter, CalendarDays, Info, LayoutGrid, List, RefreshCw } from 'lucide-react';
+import StatusBadge from './components/StatusBadge';
+import ConfirmModal from './components/ConfirmModal';
+import MessageBanner from './components/MessageBanner';
+import NavBar from './components/NavBar';
+import type { UserData, Slot, MessageState, ApiResponse, RawSlot, ViewType, LayoutType } from './types';
 
 // ==========================================
 // 配置區：從環境變數讀取 GAS Web App URL (Vite 前綴為 VITE_*)
@@ -142,7 +118,7 @@ const App: React.FC = () => {
 
   const availableTags = useMemo((): { id: string; label: string }[] => {
     if (!slots.length) return [{ id: 'All', label: '全部' }, { id: 'Me', label: '我的' }];
-    const hosts = Array.from(new Set(slots.map(s => s.host).filter(Boolean as any)));
+    const hosts = Array.from(new Set(slots.map(s => s.host).filter((v): v is string => !!v && typeof v === 'string')));
     const otherHosts = hosts.filter(email => email !== user?.email).map(email => ({
       id: email,
       label: (slots.find(s => s.host === email)?.hostName) || email,
@@ -169,7 +145,7 @@ const App: React.FC = () => {
   }, [slots, filterTag, user?.email]);
 
   // --- API 呼叫 ---
-  const callApi = async (action: string, body: object = {}): Promise<any> => {
+  const callApi = async (action: string, body: Record<string, unknown> = {}): Promise<ApiResponse | null> => {
     if (isDevMode && action !== 'getSlots') {
       setIsLoading(true);
       await new Promise(r => setTimeout(r, 1000)); 
@@ -189,7 +165,7 @@ const App: React.FC = () => {
         });
       }
       
-      const result = await response.json();
+      const result = (await response.json()) as ApiResponse;
 
       // 權限與狀態攔截
       if (result.error === 'BLACKLISTED' || result.error === '此帳號已被停用') {
@@ -205,8 +181,9 @@ const App: React.FC = () => {
 
       if (result.error) throw new Error(result.error);
       return result;
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || '連線失敗' });
+    } catch (err: unknown) {
+      const messageText = err instanceof Error ? err.message : String(err);
+      setMessage({ type: 'error', text: messageText || '連線失敗' });
       return null;
     } finally {
       setIsLoading(false);
@@ -228,28 +205,30 @@ const App: React.FC = () => {
     }
     const data = await callApi('getSlots');
     if (data && Array.isArray(data)) {
-      const normalizeSlot = (raw: any): Slot => {
-        const startRaw = raw.start || raw.startAt || raw.Start || '';
-        const endRaw = raw.end || raw.endAt || raw.End || '';
-        const host = raw.host || raw.host_email || raw.hostEmail || '';
-        const guest = raw.guest || raw.guest_email || raw.guestEmail || '';
-        const hostName = raw.hostName || raw.host_name || raw.hostName || (typeof host === 'string' ? host.split('@')[0] : '');
-        const guestName = raw.guestName || raw.guest_name || raw.guestName || (typeof guest === 'string' ? guest.split('@')[0] : '');
-        const status = (raw.status || raw.Status || 'Open') as Slot['status'];
-        const uid = raw.uid || raw.id || raw.slotUid || '';
+      const normalizeSlot = (raw: RawSlot): Slot => {
+        const asString = (v: unknown): string => (typeof v === 'string' ? v : '');
+        const startRaw = asString(raw.start ?? raw.startAt ?? raw.Start ?? '');
+        const endRaw = asString(raw.end ?? raw.endAt ?? raw.End ?? '');
+        const host = asString(raw.host ?? raw.host_email ?? raw.hostEmail ?? '');
+        const guest = asString(raw.guest ?? raw.guest_email ?? raw.guestEmail ?? '');
+        const hostName = asString(raw.hostName ?? raw.host_name ?? raw.hostName ?? (typeof host === 'string' ? host.split('@')[0] : ''));
+        const guestName = asString(raw.guestName ?? raw.guest_name ?? raw.guestName ?? (typeof guest === 'string' ? guest.split('@')[0] : ''));
+        const statusRaw = raw.status ?? raw.Status ?? 'Open';
+        const status = typeof statusRaw === 'string' && (statusRaw === 'Booked' || statusRaw === 'Cancelled') ? (statusRaw as Slot['status']) : 'Open';
+        const uid = asString(raw.uid ?? raw.id ?? raw.slotUid ?? '');
         return {
           uid,
           host,
           hostName,
           start: startRaw,
           end: endRaw,
-          status: status === 'Booked' ? 'Booked' : status === 'Cancelled' ? 'Cancelled' : 'Open',
+          status,
           guest,
           guestName,
         };
       };
 
-      setSlots(data.map(normalizeSlot));
+      setSlots(data.map((d) => normalizeSlot(d as RawSlot)));
     }
   };
 
@@ -263,13 +242,13 @@ const App: React.FC = () => {
   };
 
   const handleVerifyOTP = async (): Promise<void> => {
-    const res = await callApi('verifyOTP', { 
-      email: authData.email, 
-      otp: authData.otp, 
-      name: authData.name 
+    const res = await callApi('verifyOTP', {
+      email: authData.email,
+      otp: authData.otp,
+      name: authData.name,
     });
-    if (res?.token) {
-      const userData: UserData = { token: res.token, email: res.email, name: res.name };
+    if (res?.token && typeof res.email === 'string' && typeof res.name === 'string') {
+      const userData: UserData = { token: String(res.token), email: res.email, name: res.name };
       setUser(userData);
       setIsDevMode(false);
       localStorage.setItem('eng_practice_user', JSON.stringify(userData));
@@ -348,82 +327,27 @@ const App: React.FC = () => {
     })();
   };
 
-  const showConfirm = (opts: { title?: string; description?: string; confirmText?: string; cancelText?: string }) => {
-    return new Promise<boolean>(res => setConfirmState({ open: true, title: opts.title, description: opts.description, confirmText: opts.confirmText, cancelText: opts.cancelText, resolve: res }));
-  };
+  // helper for showing a confirm modal is now done inline where needed
 
-  const StatusBadge: React.FC<{ status: Slot['status'] }> = ({ status }) => {
-    const colors: Record<Slot['status'], string> = {
-      'Open': 'bg-green-100 text-green-700 border-green-200',
-      'Booked': 'bg-blue-100 text-blue-700 border-blue-200',
-      'Cancelled': 'bg-gray-100 text-gray-500 border-gray-200'
-    };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${colors[status]}`}>
-        {status === 'Open' ? '開放' : status === 'Booked' ? '已約' : '取消'}
-      </span>
-    );
-  };
+  
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <nav className="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2 font-bold text-indigo-600 text-xl cursor-pointer" onClick={() => !isLoading && view !== 'landing' && setView('dashboard')}>
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black">P</div>
-            <span className="tracking-tighter">Practice2Gether</span>
-          </div>
-          {user && (
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex flex-col items-end mr-2">
-                <span className="text-sm font-black leading-tight">{user.name}</span>
-                <span className={`text-[9px] px-1.5 rounded font-black tracking-tight ${isDevMode ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
-                  {isDevMode ? 'DEV-BYPASS' : user.email}
-                </span>
-              </div>
-              <button 
-                onClick={handleLogout} 
-                disabled={isLoading}
-                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all disabled:opacity-20"
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
+      <NavBar user={user} isDevMode={isDevMode} isLoading={isLoading} onLogout={handleLogout} onLogoClick={() => !isLoading && view !== 'landing' && setView('dashboard')} />
 
       {message && (
-        <div className="max-w-4xl mx-auto mt-4 px-4">
-              <div
-                className={`p-4 rounded-2xl flex flex-col items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300 border shadow-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-100' : 'bg-rose-50 text-rose-800 border-rose-100'}`}
-                onMouseEnter={() => {
-                  // reset the 10s countdown when user hovers
-                  if (messageTimerRef.current) {
-                    clearTimeout(messageTimerRef.current as unknown as number);
-                    messageTimerRef.current = window.setTimeout(() => {
-                      setMessage(null);
-                      setBookingLink(null);
-                      messageTimerRef.current = null;
-                    }, 10000);
-                  }
-                }}
-              >
-            <div className="flex items-center gap-3 w-full">
-              {message.type === 'success' ? <CheckCircle2 size={20} className="shrink-0" /> : <AlertCircle size={20} className="shrink-0" />}
-              <p className="text-sm font-bold leading-tight">{message.text}</p>
-              <button onClick={() => { if (messageTimerRef.current) { clearTimeout(messageTimerRef.current as unknown as number); messageTimerRef.current = null; } setMessage(null); setBookingLink(null); }} className="ml-auto p-1 hover:bg-black/5 rounded-lg">×</button>
-            </div>
-            {bookingLink && (
-              <div className="w-full">
-                <a href={bookingLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 px-4 py-2 bg-white text-indigo-700 rounded-lg font-bold border border-indigo-100 shadow-sm">
-                  開啟 Meet 會議連結
-                </a>
-                <p className="text-[11px] text-slate-600 mt-2">或複製連結：<span className="font-mono break-all">{bookingLink}</span></p>
-              </div>
-            )}
-          </div>
-        </div>
+        <MessageBanner
+          message={message}
+          bookingLink={bookingLink}
+          onClose={() => {
+            if (messageTimerRef.current) {
+              clearTimeout(messageTimerRef.current as unknown as number);
+              messageTimerRef.current = null;
+            }
+            setMessage(null);
+            setBookingLink(null);
+          }}
+        />
       )}
 
       <main className="max-w-4xl mx-auto p-4 md:py-8">
@@ -765,20 +689,21 @@ const App: React.FC = () => {
         )}
 
       </main>
-      {confirmState.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => { if (confirmState.resolve) { confirmState.resolve(false); } setConfirmState({ open: false }); }} />
-          <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-6">
-            <button onClick={() => { if (confirmState.resolve) confirmState.resolve(false); setConfirmState({ open: false }); }} className="absolute top-3 right-3 p-2 text-slate-500 hover:text-slate-800">×</button>
-            <h3 className="text-lg font-black mb-2">{confirmState.title || '確認'}</h3>
-            {confirmState.description && <p className="text-sm text-slate-600 mb-6">{confirmState.description}</p>}
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => { if (confirmState.resolve) confirmState.resolve(false); setConfirmState({ open: false }); }} className="px-4 py-2 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold">{confirmState.cancelText || '取消'}</button>
-              <button onClick={() => { if (confirmState.resolve) confirmState.resolve(true); setConfirmState({ open: false }); }} className="px-4 py-2 rounded-2xl bg-indigo-600 text-white font-black">{confirmState.confirmText || '確認'}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        onCancel={() => {
+          if (confirmState.resolve) confirmState.resolve(false);
+          setConfirmState({ open: false });
+        }}
+        onConfirm={() => {
+          if (confirmState.resolve) confirmState.resolve(true);
+          setConfirmState({ open: false });
+        }}
+      />
       {showPracticeGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowPracticeGuide(false)} />
