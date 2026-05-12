@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-text-main: var(--text-main);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-color: var(--border-color);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-subtle: var(--primary-subtle);
+  
+  --color-background: var(--bg-main);
+  --color-foreground: var(--text-main);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  
+  --color-secondary: var(--bg-subtle);
+  --color-secondary-foreground: var(--text-main);
+  
+  --color-muted: var(--bg-subtle);
+  --color-muted-foreground: var(--text-muted);
+  
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-main);
+  
+  --color-border: var(--border-color);
+  --color-input: var(--bg-subtle);
+  --color-ring: var(--primary);
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Default Light Theme Variables */
+  --bg-main: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-subtle: #e9ecef;
+  
+  --text-main: #212529;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  
+  --border-color: #dee2e6;
+  
+  --primary: #1a76cd;
+  --primary-fg: #ffffff;
+  --primary-subtle: #e7f1ff;
+  
+  --danger: #dc3545;
+  --success: #198754;
+  --warning: #ffc107;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-color: rgba(2,6,23,0.06);
+  --logo-glow: rgba(100,108,255,0.42);
+  
+  /* Inherited basic props */
+  color-scheme: light dark;
+  color: var(--text-main);
+  background-color: var(--bg-main);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-main: #09090b;
+    --bg-card: #18181b;
+    --bg-subtle: #27272a;
+    
+    --text-main: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #52525b;
+    
+    --border-color: #27272a;
+    
+    --primary: #3b82f6; /* Brighter blue for dark mode */
+    --primary-fg: #ffffff;
+    --primary-subtle: #1e3a8a;
+    
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #eab308;
+    /* Dark mode shadow tuning */
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.5);
+    --shadow: 0 6px 18px -6px rgba(0,0,0,0.6), 0 2px 6px -2px rgba(0,0,0,0.5);
+    --shadow-md: 0 10px 30px -10px rgba(0,0,0,0.6), 0 4px 10px -4px rgba(0,0,0,0.5);
+    --shadow-color: rgba(0,0,0,0.5);
+    --logo-glow: rgba(59,130,246,0.12);
+  }
+
+  /* Ensure commonly used shadow utilities render as dark shadows in dark mode */
+  .shadow-sm { box-shadow: var(--shadow-sm) !important; }
+  .shadow-lg, .shadow-xl { box-shadow: var(--shadow-md) !important; }
+  .shadow-2xl { box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6) !important; }
+  .shadow-inner { box-shadow: inset 0 2px 6px rgba(0,0,0,0.5) !important; }
+  .shadow-slate-200\/50 { box-shadow: var(--shadow) !important; }
+  .shadow-indigo-200, .shadow-indigo-100 { box-shadow: 0 8px 30px -10px rgba(0,0,0,0.5) !important; }
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+a {
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: inherit;
+}
+a:hover {
+  filter: brightness(1.1);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+}
+
+h1 {
+  font-size: 2em;
+  line-height: 1.1;
+  color: var(--text-main);
+}
+
+/* Reset buttons to allow custom styling in components */
+button {
+  cursor: pointer;
+}
+input {
+  background-color: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (prefers-color-scheme: light) {
+  /* Removed defaults as they are handled in :root */
+}
+
+/* Map frequently-used Tailwind color utility classes to our CSS variables
+   so components respect the system color scheme defined above. */
+.bg-white { background-color: var(--bg-card) !important; }
+.bg-slate-50 { background-color: var(--bg-subtle) !important; }
+.bg-slate-100 { background-color: var(--bg-subtle) !important; }
+
+.text-slate-900 { color: var(--text-main) !important; }
+.text-slate-700 { color: var(--text-secondary) !important; }
+.text-slate-600, .text-slate-500, .text-slate-400 { color: var(--text-muted) !important; }
+
+.border-slate-200, .border-slate-100 { border-color: var(--border-color) !important; }
+
+.bg-indigo-600 { background-color: var(--primary) !important; }
+.hover\:bg-indigo-700:hover { background-color: color-mix(in srgb, var(--primary) 75%, black 25%) !important; }
+.text-indigo-600 { color: var(--primary) !important; }
+.text-indigo-500 { color: color-mix(in srgb, var(--primary) 85%, var(--text-main) 15%) !important; }
+.text-indigo-950 { color: var(--text-main) !important; }
+
+.bg-amber-100 { background-color: rgba(250, 204, 21, 0.08) !important; }
+.text-amber-600 { color: #d97706 !important; }
+
+.shadow-slate-200\/50 { box-shadow: var(--shadow) !important; }
+.shadow-indigo-200 { box-shadow: 0 10px 30px -15px rgba(59,130,246,0.15) !important; }
+
+/* Small helpers for borders and subtle backgrounds used in many components */
+.bg-indigo-50 { background-color: color-mix(in srgb, var(--primary) 8%, transparent) !important; }
+.border-indigo-100 { border-color: color-mix(in srgb, var(--primary) 12%, transparent) !important; }
+
+/* Semantic sticky header background that respects theme variables and opacity */
+.sticky-date-bar {
+  background-color: color-mix(in srgb, var(--bg-subtle) 95%, transparent);
+}
+
+@supports (background-color: color-mix(in srgb, var(--bg-subtle) 95%, transparent)) {
+  /* nothing extra needed, modern browsers will use color-mix */
+}
+@media (prefers-color-scheme: dark) {
+  .sticky-date-bar {
+    background-color: color-mix(in srgb, var(--bg-card) 95%, transparent);
+  }
+}
+
