@@ -72,6 +72,9 @@ const App: React.FC = () => {
   }>({ open: false });
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 檢查是否有設定 GAS_URL（從 env 注入），若無則視為服務不可用
+  const serviceAvailable = (GAS_URL && GAS_URL.trim().length > 0);
+
   useEffect(() => {
     if (!message) return;
     // start 10s timer to auto-clear
@@ -710,8 +713,8 @@ const App: React.FC = () => {
           <div className="relative w-full max-w-3xl mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-6 max-h-[90vh] overflow-auto">
             <button onClick={() => setShowPracticeGuide(false)} className="absolute top-3 right-3 p-2 text-slate-500 hover:text-slate-800">×</button>
             <picture>
-              <source media="(max-width: 640px)" srcSet="/images/practice_v.png" />
-              <img src="/images/practice_h.png" alt="如何進行練習" className="w-full h-auto rounded-lg" />
+              <source media="(max-width: 640px)" srcSet="images/practice_v.png" />
+              <img src="images/practice_h.png" alt="如何進行練習" className="w-full h-auto rounded-lg" />
             </picture>
           </div>
         </div>
@@ -725,6 +728,16 @@ const App: React.FC = () => {
           </div>
         </div>
       </footer>
+        {/* 若未取得 GAS_URL，覆蓋整個 UI 並顯示提示，阻止任何操作 */}
+        {!serviceAvailable && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto">
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl border border-slate-200 shadow-lg p-6 text-center">
+              <h3 className="text-2xl font-black text-rose-600 mb-2">目前無法提供服務</h3>
+              <p className="text-sm text-slate-600">系統尚未設定服務端點，請聯絡管理員或在部署環境中設定。</p>
+            </div>
+          </div>
+        )}
     </div>
   );
 };
