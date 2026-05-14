@@ -158,15 +158,10 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     try {
-      let response: Response;
-      if (action === 'getSlots') {
-        response = await fetch(`${GAS_URL}?action=getSlots`);
-      } else {
-        response = await fetch(GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action, ...body }),
-        });
-      }
+      const response: Response = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action, ...body }),
+      });
       
       const result = (await response.json()) as ApiResponse;
 
@@ -353,15 +348,15 @@ const App: React.FC = () => {
         />
       )}
 
-      <main className="max-w-4xl mx-auto p-4 md:py-8">
+      <main className="max-w-4xl mx-auto p-2 sm:p-4 md:py-8">
         
         {view === 'landing' && (
-          <div className="text-center py-12 px-4 max-w-2xl mx-auto">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-50 text-indigo-600 rounded-[2rem] mb-6 shadow-inner">
-              <Calendar size={32} />
+          <div className="text-center py-8 sm:py-12 px-4 max-w-2xl mx-auto">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-indigo-50 text-indigo-600 rounded-3xl sm:rounded-4xl mb-4 sm:mb-6 shadow-inner">
+              <Calendar size={24} className="sm:w-8 sm:h-8" />
             </div>
-            <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight leading-tight">找個夥伴，開口說英文</h1>
-            <p className="text-lg text-slate-600 mb-10 font-medium leading-relaxed">這是一個封閉式的 10 人小組預約系統。若您是受邀成員，請登入以查看可用時段。</p>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mb-2 sm:mb-4 tracking-tight leading-tight">找個夥伴，開口說英文</h1>
+            <p className="text-base sm:text-lg text-slate-600 mb-6 sm:mb-10 font-medium leading-relaxed">這是一個封閉式的 10 人小組預約系統。若您是受邀成員，請登入以查看可用時段。</p>
             <div className="flex flex-col gap-4 items-center">
               <button 
                 onClick={() => setView('login')} 
@@ -429,38 +424,40 @@ const App: React.FC = () => {
         )}
 
         {view === 'dashboard' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-3xl sm:rounded-4xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2 tracking-tight">時間列表 <Database size={16} className={isDevMode ? "text-amber-500" : "hidden"} /></h2>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Active slots for next 2 weeks</p>
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2 tracking-tight">時間列表 <Database size={16} className={isDevMode ? "text-amber-500" : "hidden"} /></h2>
+                  <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest">Active slots for next 2 weeks</p>
                 </div>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <div className="flex bg-slate-100 p-1.5 rounded-2xl mr-2 shadow-inner">
-                  <button onClick={() => setLayout('list')} className={`p-2 rounded-xl transition-all ${layout === 'list' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-400'}`}><List size={18} /></button>
-                  <button onClick={() => setLayout('grid')} className={`p-2 rounded-xl transition-all ${layout === 'grid' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-400'}`}><LayoutGrid size={18} /></button>
-                </div>
-                <button 
-                  onClick={fetchSlots} 
-                  disabled={isLoading}
-                  className="p-3 border border-slate-200 rounded-2xl hover:bg-white hover:shadow-sm transition-all text-slate-400 disabled:opacity-30"
-                  title="重新整理"
-                >
-                  <RefreshCw size={20} className={isLoading ? "animate-spin text-indigo-600" : ""} />
-                </button>
+              <div className="flex flex-col sm:flex-row justify-end items-stretch gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex bg-slate-100 p-1 rounded-xl sm:p-1.5 sm:rounded-2xl shadow-inner">
+                    <button onClick={() => setLayout('list')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${layout === 'list' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-400'}`}><List size={18} /></button>
+                    <button onClick={() => setLayout('grid')} className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all ${layout === 'grid' ? 'bg-white shadow-sm text-indigo-600 font-black' : 'text-slate-400'}`}><LayoutGrid size={18} /></button>
+                  </div>
+                  <button 
+                    onClick={fetchSlots} 
+                    disabled={isLoading}
+                    className="p-2 sm:p-3 border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-white hover:shadow-sm transition-all text-slate-400 disabled:opacity-30"
+                    title="重新整理"
+                  >
+                    <RefreshCw size={18} className={isLoading ? "animate-spin text-indigo-600" : ""} />
+                  </button>
                   <button
                     onClick={() => setShowPracticeGuide(true)}
-                    className="p-3 border border-slate-200 rounded-2xl hover:bg-white hover:shadow-sm transition-all text-slate-400 disabled:opacity-30"
+                    className="p-2 sm:p-3 border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-white hover:shadow-sm transition-all text-slate-400 disabled:opacity-30"
                     title="如何進行練習"
                   >
                     <Info size={18} />
                   </button>
+                </div>
                 <button 
                   onClick={() => setView('add-slots')} 
                   disabled={isLoading}
-                  className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-xl sm:rounded-2xl hover:bg-indigo-700 transition-all font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"
                 >
                   <Plus size={18} /> 發布邀請
                 </button>
@@ -468,7 +465,7 @@ const App: React.FC = () => {
             </div>
 
             {/* 過濾器 */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-4 no-scrollbar">
               <Filter size={14} className="text-slate-300 shrink-0 ml-1" />
               {availableTags.map(tag => {
                 return (
@@ -476,7 +473,7 @@ const App: React.FC = () => {
                     key={tag.id} 
                     disabled={isLoading}
                     onClick={() => setFilterTag(tag.id)} 
-                    className={`whitespace-nowrap px-5 py-2 rounded-full text-xs font-black transition-all border-2 ${filterTag === tag.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'} disabled:opacity-40`}
+                    className={`whitespace-nowrap px-4 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-xs font-black transition-all border-2 ${filterTag === tag.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'} disabled:opacity-40`}
                   >
                     {tag.label}
                   </button>
@@ -495,70 +492,82 @@ const App: React.FC = () => {
                 目前沒有可預約的時段。
               </div>
             ) : (
-              <div className="space-y-12">
+              <div className="space-y-8 sm:space-y-12">
                 {Object.entries(groupedSlots).map(([dateLabel, dateSlots]) => (
-                  <div key={dateLabel} className="space-y-5">
-                    <div className="flex items-center gap-3 sticky top-[72px] z-40 sticky-date-bar backdrop-blur-md py-3 px-1">
-                      <div className="p-2 bg-white border border-slate-200 rounded-xl shadow-sm text-indigo-600"><CalendarDays size={16} /></div>
-                      <h3 className="text-sm font-black text-slate-900 tracking-tight">{dateLabel}</h3>
+                  <div key={dateLabel} className="space-y-3 sm:space-y-5">
+                    <div className="flex items-center gap-2 sm:gap-3 sticky top-[64px] sm:top-[72px] z-40 sticky-date-bar backdrop-blur-md py-2 sm:py-3 px-1" style={{ background: 'transparent'}}>
+                      <div className="p-1.5 sm:p-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl shadow-sm text-indigo-600"><CalendarDays size={14} className="sm:w-4 sm:h-4" /></div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">{dateLabel}</h3>
                       <div className="flex-1 h-px bg-slate-200"></div>
                     </div>
 
                     {layout === 'list' ? (
-                      <div className="bg-white rounded-[2rem] border border-slate-200 divide-y divide-slate-50 overflow-hidden shadow-sm">
+                      <div className="bg-white rounded-3xl sm:rounded-4xl border border-slate-200 divide-y divide-slate-50 overflow-hidden shadow-sm">
                         {dateSlots.map((slot) => {
                           const isHost = slot.host === user?.email;
                           const isGuest = slot.guest === user?.email;
                           const isCurrentSlotLoading = activeSlotId === slot.uid;
 
                           return (
-                            <div key={slot.uid} className={`flex flex-col sm:flex-row sm:items-center justify-between p-6 gap-6 transition-all ${isHost ? 'bg-indigo-50/20' : 'hover:bg-slate-50/30'}`}>
-                              <div className="flex items-center gap-6 flex-1">
-                                <div className="flex flex-col items-start min-w-[100px]">
-                                  <span className="text-2xl font-black text-slate-900 tabular-nums tracking-tighter leading-none">
+                            <div key={slot.uid} className={`flex items-center justify-between p-4 sm:p-6 gap-3 sm:gap-4 transition-all ${isHost ? 'bg-indigo-50/20' : 'hover:bg-slate-50/30'}`}>
+                              <div className="flex items-center gap-3 sm:gap-6 flex-1">
+                                <div className="flex flex-col items-start min-w-[70px] sm:min-w-[100px]">
+                                  <span className="text-lg sm:text-2xl font-black text-slate-900 tabular-nums tracking-tighter leading-none">
                                     {new Date(slot.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}
                                   </span>
-                                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">
+                                  <span className="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">
                                     to {new Date(slot.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}
                                   </span>
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-1 sm:gap-1.5">
+                                  <div className="flex items-center gap-1 sm:gap-2">
                                     <StatusBadge status={slot.status} />
-                                    <span className="text-sm font-black text-slate-700">{isHost ? '我的時段' : `主辦人：${slot.hostName}`}</span>
+                                    <span className="text-[11px] sm:text-sm font-black text-slate-700 truncate max-w-[80px] sm:max-w-none">
+                                      <span className="sm:inline hidden">主辦人：</span>{slot.hostName}
+                                    </span>
                                   </div>
                                   {slot.status === 'Booked' && (
-                                    <div className="flex items-center gap-1.5 text-[10px] text-indigo-500 font-black italic">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                                      <span>受邀人：{slot.guestName}</span>
+                                    <div className="flex items-center gap-1 text-[8px] sm:text-[10px] text-indigo-500 font-black italic">
+                                      <div className="w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full bg-indigo-500 shrink-0"></div>
+                                      <span className="truncate max-w-[80px] sm:max-w-none">
+                                        <span className="sm:inline hidden">受邀人：</span>{slot.guestName}
+                                      </span>
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 sm:gap-3">
                                 {slot.status === 'Open' && !isHost && (
                                   <button 
                                     onClick={() => handleBook(slot.uid)} 
                                     disabled={isLoading} 
-                                    className="px-10 py-3 bg-indigo-600 text-white rounded-[1.25rem] text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95"
+                                    className="p-2 sm:px-10 sm:py-3 bg-indigo-600 text-white rounded-xl sm:rounded-[1.25rem] text-xs sm:text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95"
+                                    title="預約"
                                   >
-                                    {isCurrentSlotLoading ? <Loader2 size={16} className="animate-spin" /> : '預約'}
+                                    {isCurrentSlotLoading ? (
+                                      <Loader2 size={14} className="animate-spin" />
+                                    ) : (
+                                      <>
+                                        <Calendar size={16} className="sm:hidden" />
+                                        <span className="hidden sm:inline">預約</span>
+                                      </>
+                                    )}
                                   </button>
                                 )}
                                 {isHost && (
                                   <button 
                                     onClick={() => handleDelete(slot.uid)} 
                                     disabled={isLoading} 
-                                    className="p-3 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all disabled:opacity-20"
+                                    className="p-2 sm:p-3 text-rose-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl sm:rounded-2xl transition-all disabled:opacity-20"
                                   >
-                                    {isCurrentSlotLoading ? <Loader2 size={24} className="animate-spin" /> : <Trash2 size={24} />}
+                                    {isCurrentSlotLoading ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} className="sm:w-6 sm:h-6" />}
                                   </button>
                                 )}
                                 {slot.status === 'Booked' && isGuest && (
-                                  <span className="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black border border-indigo-100 shadow-sm">我已預約</span>
+                                  <span className="px-3 py-2 sm:px-6 sm:py-3 bg-indigo-50 text-indigo-600 rounded-lg sm:rounded-2xl text-[10px] sm:text-xs font-black border border-indigo-100 shadow-sm">已預約</span>
                                 )}
                                 {slot.status === 'Booked' && !isHost && !isGuest && (
-                                  <span className="text-[11px] text-slate-300 font-black uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">已被預約</span>
+                                  <span className="text-[9px] sm:text-[11px] text-slate-300 font-black uppercase tracking-widest bg-slate-50 px-2 py-0.5 sm:px-3 sm:py-1 rounded sm:rounded-lg">已被預約</span>
                                 )}
                               </div>
                             </div>
