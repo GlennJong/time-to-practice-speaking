@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Calendar, Clock, Plus, Trash2, ChevronLeft, Mail, ShieldCheck, Loader2, Cpu, Database, Filter, CalendarDays, Info, LayoutGrid, List, RefreshCw } from 'lucide-react';
+import { Joyride } from 'react-joyride';
+import type { EventData, Step } from 'react-joyride';
 import StatusBadge from './components/StatusBadge';
 import ConfirmModal from './components/ConfirmModal';
 import MessageBanner from './components/MessageBanner';
@@ -42,6 +44,9 @@ const MOCK_SLOTS = (devEmail: string, devName: string): Slot[] => {
   ];
 };
 
+const getOnboardingKey = (email: string): string => `onboarding_done_${email.toLowerCase()}`;
+const AUTH_PROFILE_KEY = 'eng_practice_auth_profile';
+
 const App: React.FC = () => {
   // --- 狀態管理 ---
   const [view, setView] = useState<ViewType>('landing'); 
@@ -57,11 +62,25 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [authData, setAuthData] = useState({ email: '', otp: '', name: '' });
+  const [authData, setAuthData] = useState(() => {
+    const savedProfile = localStorage.getItem(AUTH_PROFILE_KEY);
+    if (!savedProfile) return { email: '', otp: '', name: '' };
+    try {
+      const parsed = JSON.parse(savedProfile) as { email?: unknown; name?: unknown };
+      return {
+        email: typeof parsed.email === 'string' ? parsed.email : '',
+        name: typeof parsed.name === 'string' ? parsed.name : '',
+        otp: '',
+      };
+    } catch {
+      return { email: '', otp: '', name: '' };
+    }
+  });
   const [slots, setSlots] = useState<Slot[]>([]);
   const [newSlots, setNewSlots] = useState<string[]>(['']); 
   const [bookingLink, setBookingLink] = useState<string | null>(null);
   const [showPracticeGuide, setShowPracticeGuide] = useState<boolean>(false);
+  const [runOnboarding, setRunOnboarding] = useState<boolean>(false);
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
     title?: string;
@@ -130,6 +149,28 @@ const App: React.FC = () => {
     return [{ id: 'All', label: '全部' }, { id: 'Me', label: meLabel }, ...otherHosts];
   }, [slots, user?.email]);
 
+  const hasBookableSlot = useMemo((): boolean => {
+    return slots.some((slot) => slot.status === 'Open' && slot.host !== user?.email);
+  }, [slots, user?.email]);
+
+  const onboardingSteps = useMemo((): Step[] => {
+    return [
+      {
+        target: '.tour-publish-invite',
+        title: '先建立一個邀請',
+        content: '點這裡發布你可練習的時段，其他夥伴就可以看到並預約。',
+        
+      },
+      {
+        target: hasBookableSlot ? '.tour-book-slot' : '.tour-slot-section',
+        title: '接著預約時間',
+        content: hasBookableSlot
+          ? '看到可用時段時，點「預約」就能快速卡位。'
+          : '這裡會顯示可預約的時段；當有開放時，你會看到「預約」按鈕。',
+      },
+    ];
+  }, [hasBookableSlot]);
+
   const groupedSlots = useMemo((): Record<string, Slot[]> => {
     let filtered = slots;
     if (filterTag === 'Me') filtered = slots.filter(s => s.host === user?.email);
@@ -192,8 +233,26 @@ const App: React.FC = () => {
     localStorage.removeItem('eng_practice_user');
     setUser(null);
     setIsDevMode(false);
+    setRunOnboarding(false);
     setView('landing');
     setMessage({ type: 'error', text });
+  };
+
+  const handleOnboardingCallback = (data: EventData): void => {
+    const { status, action } = data;
+    if (status === 'finished' || status === 'skipped' || action === 'close') {
+      if (user?.email) {
+        localStorage.setItem(getOnboardingKey(user.email), '1');
+      }
+      setRunOnboarding(false);
+    }
+  };
+
+  const persistAuthProfile = (email: string, name: string): void => {
+    localStorage.setItem(
+      AUTH_PROFILE_KEY,
+      JSON.stringify({ email: email.trim(), name: name.trim() })
+    );
   };
 
   const fetchSlots = async (): Promise<void> => {
@@ -235,6 +294,7 @@ const App: React.FC = () => {
       setMessage({ type: 'error', text: '姓名與 Email 為必填' });
       return;
     }
+    persistAuthProfile(authData.email, authData.name);
     const res = await callApi('requestOTP', { email: authData.email });
     if (res?.success) setView('otp');
   };
@@ -250,7 +310,11 @@ const App: React.FC = () => {
       setUser(userData);
       setIsDevMode(false);
       localStorage.setItem('eng_practice_user', JSON.stringify(userData));
+      persistAuthProfile(res.email, res.name);
       setView('dashboard');
+      if (!localStorage.getItem(getOnboardingKey(res.email))) {
+        setRunOnboarding(true);
+      }
       fetchSlots();
     }
   };
@@ -320,6 +384,7 @@ const App: React.FC = () => {
       localStorage.removeItem('eng_practice_user');
       setUser(null);
       setIsDevMode(false);
+      setRunOnboarding(false);
       setView('landing');
       setBookingLink(null);
     })();
@@ -387,11 +452,31 @@ const App: React.FC = () => {
             <div className="space-y-5">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">您的稱呼</label>
-                <input type="text" value={authData.name} onChange={(e) => setAuthData({...authData, name: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all" placeholder="例如：Glenn" />
+                <input
+                  type="text"
+                  value={authData.name}
+                  onChange={(e) => {
+                    const nextName = e.target.value;
+                    setAuthData({ ...authData, name: nextName });
+                    persistAuthProfile(authData.email, nextName);
+                  }}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all"
+                  placeholder="例如：Glenn"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Google Email</label>
-                <input type="email" value={authData.email} onChange={(e) => setAuthData({...authData, email: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all" placeholder="name@gmail.com" />
+                <input
+                  type="email"
+                  value={authData.email}
+                  onChange={(e) => {
+                    const nextEmail = e.target.value;
+                    setAuthData({ ...authData, email: nextEmail });
+                    persistAuthProfile(nextEmail, authData.name);
+                  }}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all"
+                  placeholder="name@gmail.com"
+                />
               </div>
               <button 
                 onClick={handleRequestOTP} 
@@ -425,6 +510,23 @@ const App: React.FC = () => {
 
         {view === 'dashboard' && (
           <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
+            {user && (
+              <Joyride
+                run={runOnboarding}
+                steps={onboardingSteps}
+                continuous
+                onEvent={handleOnboardingCallback}
+                options={{
+                  buttons: ['back', 'skip', 'close', 'primary'],
+                  showProgress: true,
+                  closeButtonAction: 'skip',
+                  primaryColor: '#4f46e5',
+                  textColor: '#0f172a',
+                  zIndex: 1100,
+                }}
+                locale={{ back: '上一步', close: '關閉', last: '完成', next: '下一步', skip: '跳過' }}
+              />
+            )}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-3xl sm:rounded-4xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-4">
                 <div>
@@ -457,7 +559,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => setView('add-slots')} 
                   disabled={isLoading}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-xl sm:rounded-2xl hover:bg-indigo-700 transition-all font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"
+                  className="tour-publish-invite w-full sm:w-auto px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-xl sm:rounded-2xl hover:bg-indigo-700 transition-all font-black flex items-center justify-center gap-2 shadow-lg shadow-indigo-100"
                 >
                   <Plus size={18} /> 發布邀請
                 </button>
@@ -492,7 +594,7 @@ const App: React.FC = () => {
                 目前沒有可預約的時段。
               </div>
             ) : (
-              <div className="space-y-8 sm:space-y-12">
+              <div className="tour-slot-section space-y-8 sm:space-y-12">
                 {Object.entries(groupedSlots).map(([dateLabel, dateSlots]) => (
                   <div key={dateLabel} className="space-y-3 sm:space-y-5">
                     <div className="flex items-center gap-2 sm:gap-3 sticky top-[64px] sm:top-[72px] z-40 sticky-date-bar backdrop-blur-md py-2 sm:py-3 px-1" style={{ background: 'transparent'}}>
@@ -541,7 +643,7 @@ const App: React.FC = () => {
                                   <button 
                                     onClick={() => handleBook(slot.uid)} 
                                     disabled={isLoading} 
-                                    className="p-2 sm:px-10 sm:py-3 bg-indigo-600 text-white rounded-xl sm:rounded-[1.25rem] text-xs sm:text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95"
+                                    className="tour-book-slot p-2 sm:px-10 sm:py-3 bg-indigo-600 text-white rounded-xl sm:rounded-[1.25rem] text-xs sm:text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95"
                                     title="預約"
                                   >
                                     {isCurrentSlotLoading ? (
@@ -599,7 +701,7 @@ const App: React.FC = () => {
                               </div>
                               <div className="flex gap-2 pt-4 border-t border-slate-50">
                                 {slot.status === 'Open' && !isHost && (
-                                  <button onClick={() => handleBook(slot.uid)} disabled={isLoading} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95">
+                                  <button onClick={() => handleBook(slot.uid)} disabled={isLoading} className="tour-book-slot flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95">
                                     {isCurrentSlotLoading ? <Loader2 size={16} className="animate-spin" /> : '預約'}
                                   </button>
                                 )}
