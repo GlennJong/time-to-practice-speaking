@@ -337,6 +337,11 @@ const App: React.FC = () => {
   };
 
   const handleAddSlots = async (): Promise<void> => {
+    const hasEmptySlot = newSlots.some(s => s.trim() === '');
+    if (hasEmptySlot) {
+      setMessage({ type: 'error', text: '請先填寫所有時段，空白欄位無法發布。' });
+      return;
+    }
     const validSlots = newSlots.filter(s => s !== '');
     if (validSlots.length === 0 || !user) return;
     const ok = await new Promise<boolean>(res => setConfirmState({ open: true, title: '確認發布時段？', description: '確定要發布這些時段到系統嗎？', confirmText: '發布', cancelText: '取消', resolve: res }));
@@ -730,7 +735,7 @@ const App: React.FC = () => {
         )}
 
         {view === 'add-slots' && (
-          <div className="max-w-xl mx-auto animate-in slide-in-from-bottom-12 duration-600">
+          <div className="mt-12 sm:mt-0 max-w-xl mx-auto animate-in slide-in-from-bottom-12 duration-600">
             <div className="bg-white p-4 md:p-12 rounded-[1.5rem] md:rounded-[3.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
               <div className="flex justify-between items-center mb-10">
                 <button 
@@ -745,22 +750,23 @@ const App: React.FC = () => {
                 <div className="w-10"></div>
               </div>
 
-              <div className="bg-amber-50 border-2 border-amber-100 rounded-[2rem] p-6 mb-10 flex flex-col sm:flex-row items-center gap-4">
+              <div className="bg-amber-50 border-2 border-amber-100 rounded-[2rem] p-4 mb-10 flex flex-col sm:flex-row items-center gap-4">
                 <div className="bg-amber-200 p-2 rounded-xl text-amber-700 shadow-sm"><Info size={24} className="shrink-0" /></div>
                 <div className="text-xs text-amber-900 leading-relaxed font-bold">
                   <p>• 時間單位自動調整 30 分為單位。</p>
                   <p>• 每一筆時段自動設為 1 小時。</p>
-                  <p>• 可新增多筆時段，列表僅顯示近 2 週時段。</p>
+                  <p>• 可新增多筆，列表僅顯示近 2 週時段。</p>
                 </div>
               </div>
 
               <div className="space-y-4 mb-10">
                 {newSlots.map((time, idx) => (
-                  <div key={idx} className="slot-datetime-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 group animate-in slide-in-from-left-4 duration-300" style={{ animationDelay: `${idx * 60}ms` }}>
+                  <div key={idx} className="slot-datetime-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 sm:gap-3 group animate-in slide-in-from-left-4 duration-300" style={{ animationDelay: `${idx * 60}ms` }}>
                     <div className="w-full min-w-0 flex-1 relative">
                       <input 
                         type="datetime-local" 
                         step="1800" 
+                        placeholder="選擇日期與時間"
                         value={time} 
                         disabled={isLoading}
                         onChange={(e) => {
@@ -768,14 +774,20 @@ const App: React.FC = () => {
                           updated[idx] = snapTo30Minutes(e.target.value);
                           setNewSlots(updated);
                         }} 
-                        className="slot-datetime-input block w-full min-w-0 px-4 sm:px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black text-sm sm:text-base tabular-nums transition-all disabled:opacity-40" 
+                        className="slot-datetime-input block w-full min-w-0 px-3 sm:px-6 py-2 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black text-xs sm:text-base tabular-nums transition-all disabled:opacity-40" 
                       />
+                      {!time && (
+                        <div className="ios-datetime-hint pointer-events-none absolute inset-y-0 left-0 items-center gap-1.5 pl-3 text-slate-400 sm:hidden">
+                          <Calendar size={13} className="shrink-0" />
+                          <span className="text-[10px] font-black tracking-wide">點擊選擇日期時間</span>
+                        </div>
+                      )}
                     </div>
                     {newSlots.length > 1 && (
                       <button 
                         onClick={() => setNewSlots(newSlots.filter((_, i) => i !== idx))} 
                         disabled={isLoading}
-                        className="self-center shrink-0 p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
+                        className="self-center shrink-0 p-2 sm:p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
                       >
                         <Trash2 size={24} />
                       </button>
@@ -793,10 +805,10 @@ const App: React.FC = () => {
 
               <button 
                 onClick={handleAddSlots} 
-                disabled={isLoading || newSlots.every(s => s === '')} 
+                disabled={isLoading || newSlots.some(s => s.trim() === '')} 
                 className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black text-xl hover:bg-indigo-700 shadow-2xl shadow-indigo-100 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-4"
               >
-                {isLoading ? <><Loader2 className="animate-spin" /> Processing...</> : '發布所有時段'}
+                {isLoading ? <><Loader2 className="animate-spin" /> Processing...</> : '發布邀請'}
               </button>
             </div>
           </div>

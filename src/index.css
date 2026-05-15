@@ -256,9 +256,17 @@ input {
   min-width: 0;
 }
 
+.ios-datetime-hint {
+  display: none;
+}
+
 @supports (-webkit-touch-callout: none) {
   .slot-datetime-input {
     font-size: 16px;
+  }
+
+  .ios-datetime-hint {
+    display: flex;
   }
 }
 
