@@ -618,7 +618,7 @@ const App: React.FC = () => {
             {isLoading && slots.length === 0 ? (
               <div className="py-24 text-center font-black text-slate-300 flex flex-col items-center gap-4 animate-in fade-in duration-300">
                 <Loader2 className="animate-spin" size={48} />
-                <p className="tracking-widest uppercase text-[10px]">Syncing with Google Sheets...</p>
+                <p className="tracking-widest uppercase text-[10px]">Syncing...</p>
               </div>
             ) : Object.keys(groupedSlots).length === 0 ? (
               <div className="py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 text-center font-black italic text-slate-400 animate-in fade-in duration-1000">
