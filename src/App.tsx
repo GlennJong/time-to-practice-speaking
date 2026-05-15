@@ -831,7 +831,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <footer className="max-w-4xl mx-auto p-10 text-center">
+      <footer className="hidden sm:block max-w-4xl mx-auto p-10 text-center">
         <div className="flex flex-col items-center gap-4 opacity-30">
           <div className="space-y-1">
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Practice2Gether</p>
