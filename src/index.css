@@ -231,3 +231,34 @@ input {
   }
 }
 
+/* Keep iOS Safari datetime-local width from overflowing its grid cell. */
+.slot-datetime-row {
+  min-width: 0;
+}
+
+.slot-datetime-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.slot-datetime-input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.slot-datetime-input::-webkit-datetime-edit {
+  min-width: 0;
+}
+
+.slot-datetime-input::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .slot-datetime-input {
+    font-size: 16px;
+  }
+}
+

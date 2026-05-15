@@ -731,7 +731,7 @@ const App: React.FC = () => {
 
         {view === 'add-slots' && (
           <div className="max-w-xl mx-auto animate-in slide-in-from-bottom-12 duration-600">
-            <div className="bg-white p-8 md:p-12 rounded-[3.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
+            <div className="bg-white p-4 md:p-12 rounded-[1.5rem] md:rounded-[3.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
               <div className="flex justify-between items-center mb-10">
                 <button 
                   onClick={() => !isLoading && setView('dashboard')} 
@@ -756,7 +756,7 @@ const App: React.FC = () => {
 
               <div className="space-y-4 mb-10">
                 {newSlots.map((time, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-3 group animate-in slide-in-from-left-4 duration-300" style={{ animationDelay: `${idx * 60}ms` }}>
+                  <div key={idx} className="slot-datetime-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 group animate-in slide-in-from-left-4 duration-300" style={{ animationDelay: `${idx * 60}ms` }}>
                     <div className="w-full min-w-0 flex-1 relative">
                       <input 
                         type="datetime-local" 
@@ -768,14 +768,14 @@ const App: React.FC = () => {
                           updated[idx] = snapTo30Minutes(e.target.value);
                           setNewSlots(updated);
                         }} 
-                        className="block w-full min-w-0 px-4 sm:px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black text-sm sm:text-base tabular-nums transition-all disabled:opacity-40" 
+                        className="slot-datetime-input block w-full min-w-0 px-4 sm:px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black text-sm sm:text-base tabular-nums transition-all disabled:opacity-40" 
                       />
                     </div>
                     {newSlots.length > 1 && (
                       <button 
                         onClick={() => setNewSlots(newSlots.filter((_, i) => i !== idx))} 
                         disabled={isLoading}
-                        className="self-end sm:self-auto shrink-0 p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
+                        className="self-center shrink-0 p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
                       >
                         <Trash2 size={24} />
                       </button>
