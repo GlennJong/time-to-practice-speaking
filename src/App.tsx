@@ -745,19 +745,19 @@ const App: React.FC = () => {
                 <div className="w-10"></div>
               </div>
 
-              <div className="bg-amber-50 border-2 border-amber-100 rounded-[2rem] p-6 mb-10 flex items-start gap-4">
+              <div className="bg-amber-50 border-2 border-amber-100 rounded-[2rem] p-6 mb-10 flex flex-col sm:flex-row items-center gap-4">
                 <div className="bg-amber-200 p-2 rounded-xl text-amber-700 shadow-sm"><Info size={24} className="shrink-0" /></div>
                 <div className="text-xs text-amber-900 leading-relaxed font-bold">
-                  <p>• 時間單位會自動調整以 30 分分割。</p>
-                  <p>• 每一筆時段為一小時。</p>
-                  <p>• 可新增多筆時段，列表僅顯示近 2 週</p>
+                  <p>• 時間單位自動調整 30 分為單位。</p>
+                  <p>• 每一筆時段自動設為 1 小時。</p>
+                  <p>• 可新增多筆時段，列表僅顯示近 2 週時段。</p>
                 </div>
               </div>
 
               <div className="space-y-4 mb-10">
                 {newSlots.map((time, idx) => (
-                  <div key={idx} className="flex gap-3 group animate-in slide-in-from-left-4 duration-300" style={{ animationDelay: `${idx * 60}ms` }}>
-                    <div className="flex-1 relative">
+                  <div key={idx} className="flex flex-col sm:flex-row gap-3 group animate-in slide-in-from-left-4 duration-300" style={{ animationDelay: `${idx * 60}ms` }}>
+                    <div className="w-full min-w-0 flex-1 relative">
                       <input 
                         type="datetime-local" 
                         step="1800" 
@@ -768,14 +768,14 @@ const App: React.FC = () => {
                           updated[idx] = snapTo30Minutes(e.target.value);
                           setNewSlots(updated);
                         }} 
-                        className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black tabular-nums transition-all disabled:opacity-40" 
+                        className="block w-full min-w-0 px-4 sm:px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black text-sm sm:text-base tabular-nums transition-all disabled:opacity-40" 
                       />
                     </div>
                     {newSlots.length > 1 && (
                       <button 
                         onClick={() => setNewSlots(newSlots.filter((_, i) => i !== idx))} 
                         disabled={isLoading}
-                        className="p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
+                        className="self-end sm:self-auto shrink-0 p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
                       >
                         <Trash2 size={24} />
                       </button>
