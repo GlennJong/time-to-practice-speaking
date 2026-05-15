@@ -163,6 +163,31 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Desktop should use natural page height so footer does not overlap the content area. */
+@media (min-width: 640px) {
+  html,
+  body {
+    overflow: auto;
+    overscroll-behavior: auto;
+  }
+
+  #root {
+    overflow: visible;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
+  }
+
+  .app-main {
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+}
+
 h1 {
   font-size: 2em;
   line-height: 1.1;
