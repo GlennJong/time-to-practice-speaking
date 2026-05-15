@@ -395,7 +395,7 @@ const App: React.FC = () => {
   
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="app-shell bg-slate-50 text-slate-900 font-sans">
       <NavBar user={user} isDevMode={isDevMode} isLoading={isLoading} onLogout={handleLogout} onLogoClick={() => !isLoading && view !== 'landing' && setView('dashboard')} />
 
       {message && (
@@ -413,7 +413,7 @@ const App: React.FC = () => {
         />
       )}
 
-      <main className="max-w-4xl mx-auto p-2 sm:p-4 md:py-8">
+      <main className="app-main max-w-4xl mx-auto w-full p-2 sm:p-4 md:py-8">
         
         {view === 'landing' && (
           <div className="text-center py-8 sm:py-12 px-4 max-w-2xl mx-auto">
@@ -597,7 +597,7 @@ const App: React.FC = () => {
               <div className="tour-slot-section space-y-8 sm:space-y-12">
                 {Object.entries(groupedSlots).map(([dateLabel, dateSlots]) => (
                   <div key={dateLabel} className="space-y-3 sm:space-y-5">
-                    <div className="flex items-center gap-2 sm:gap-3 sticky top-[64px] sm:top-[72px] z-40 sticky-date-bar backdrop-blur-md py-2 sm:py-3 px-1" style={{ background: 'transparent'}}>
+                    <div className="flex items-center gap-2 sm:gap-3 sticky top-[52px] sm:top-[72px] z-40 sticky-date-bar backdrop-blur-md py-2 sm:py-3 px-1" style={{ background: 'transparent'}}>
                       <div className="p-1.5 sm:p-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl shadow-sm text-indigo-600"><CalendarDays size={14} className="sm:w-4 sm:h-4" /></div>
                       <h3 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">{dateLabel}</h3>
                       <div className="flex-1 h-px bg-slate-200"></div>
