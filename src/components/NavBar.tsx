@@ -4,7 +4,7 @@ import type { UserData } from '../types';
 
 const NavBar: React.FC<{ user: UserData | null; isDevMode: boolean; isLoading: boolean; onLogout: () => void; onLogoClick: () => void }> = ({ user, isDevMode, isLoading, onLogout, onLogoClick }) => {
   return (
-    <nav className="absolute inset-x-0 top-0 z-50 border-b border-transparent bg-transparent px-3 py-2 shadow-none sm:sticky sm:border-slate-200 sm:bg-white sm:px-4 sm:py-3 sm:shadow-sm">
+    <nav className="absolute inset-x-0 top-0 z-50 border-b border-transparent bg-transparent px-3 py-2 shadow-none sm:sticky sm:border-slate-200 sm:bg-white sm:dark:bg-zinc-900 sm:px-4 sm:py-3 sm:shadow-sm">
       <div className="max-w-4xl mx-auto flex justify-between items-center">
         <div className="hidden sm:flex items-center gap-2 font-bold text-indigo-600 text-xl cursor-pointer" onClick={onLogoClick}>
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black">P</div>

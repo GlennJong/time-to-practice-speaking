@@ -418,7 +418,7 @@ const App: React.FC = () => {
         />
       )}
 
-      <main className="app-main max-w-4xl mx-auto w-full p-2 sm:p-4 md:py-8">
+      <main className="app-main max-w-4xl mx-auto w-full p-0 sm:p-4 md:py-8">
         
         {view === 'landing' && (
           <div className="text-center py-8 sm:py-12 px-4 max-w-2xl mx-auto">
@@ -452,7 +452,7 @@ const App: React.FC = () => {
         )}
 
         {view === 'login' && (
-          <div className="max-w-md mx-auto bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50">
+          <div className="max-w-md mt-2 mx-2 sm:mx-auto bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50">
             <h2 className="text-2xl font-black mb-8 flex items-center gap-2 text-indigo-950"><Mail className="text-indigo-600" />身份驗證</h2>
             <div className="space-y-5">
               <div className="space-y-1.5">
@@ -490,13 +490,28 @@ const App: React.FC = () => {
               >
                 {isLoading ? <Loader2 className="animate-spin" /> : '取得驗證碼'}
               </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                className="w-full py-2 bg-indigo-50 text-indigo-600 rounded-2xl font-black hover:bg-indigo-100 disabled:opacity-50 transition-all shadow flex items-center justify-center gap-2 text-sm mt-1"
+                onClick={() => {
+                  if (!authData.email || !authData.name) {
+                    setMessage({ type: 'error', text: '請輸入稱呼與 Email' });
+                    return;
+                  }
+                  persistAuthProfile(authData.email, authData.name);
+                  setView('otp');
+                }}
+              >
+                已取得驗證碼
+              </button>
               <button onClick={() => setView('landing')} className="w-full py-2 text-slate-400 text-sm font-bold hover:text-slate-700">返回首頁</button>
             </div>
           </div>
         )}
 
         {view === 'otp' && (
-          <div className="max-w-md mx-auto bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl text-center">
+          <div className="max-w-md mt-2 mx-2 sm:mx-auto bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl text-center">
             <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
               <ShieldCheck size={36} />
             </div>
@@ -509,6 +524,17 @@ const App: React.FC = () => {
               className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-100"
             >
               {isLoading ? <Loader2 className="animate-spin" /> : '完成登入'}
+            </button>
+            <button
+              type="button"
+              disabled={isLoading}
+              className="w-full py-2 mt-2 bg-indigo-50 text-indigo-600 rounded-2xl font-black hover:bg-indigo-100 disabled:opacity-50 transition-all shadow flex items-center justify-center gap-2 text-sm"
+              onClick={() => {
+                setAuthData({ ...authData, otp: '' });
+                setView('login');
+              }}
+            >
+              返回登入
             </button>
           </div>
         )}
@@ -532,7 +558,7 @@ const App: React.FC = () => {
                 locale={{ back: '上一步', close: '關閉', last: '完成', next: '下一步', skip: '跳過' }}
               />
             )}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-white p-4 sm:p-6 rounded-3xl sm:rounded-4xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-white mx-2 mt-2 p-4 sm:p-6 rounded-3xl sm:rounded-4xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2 tracking-tight">時間列表 <Database size={16} className={isDevMode ? "text-amber-500" : "hidden"} /></h2>
@@ -572,7 +598,7 @@ const App: React.FC = () => {
             </div>
 
             {/* 過濾器 */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-4 no-scrollbar">
+            <div className="flex mx-2 items-center gap-2 overflow-x-auto pb-2 sm:pb-4 no-scrollbar">
               <Filter size={14} className="text-slate-300 shrink-0 ml-1" />
               {availableTags.map(tag => {
                 return (
@@ -602,14 +628,14 @@ const App: React.FC = () => {
               <div className="tour-slot-section space-y-8 sm:space-y-12">
                 {Object.entries(groupedSlots).map(([dateLabel, dateSlots]) => (
                   <div key={dateLabel} className="space-y-3 sm:space-y-5">
-                    <div className="flex items-center gap-2 sm:gap-3 sticky top-[0px] sm:top-[72px] z-40 sticky-date-bar backdrop-blur-md py-2 sm:py-3 px-1" style={{ background: 'transparent'}}>
+                    <div className="flex items-center gap-2 sm:gap-3 sticky top-[0px] sm:top-[72px] z-40 sticky-date-bar backdrop-blur-md sm:backdrop-blur-none py-4 sm:py-3 px-2" style={{ background: 'transparent'}}>
                       <div className="p-1.5 sm:p-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl shadow-sm text-indigo-600"><CalendarDays size={14} className="sm:w-4 sm:h-4" /></div>
                       <h3 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight">{dateLabel}</h3>
                       <div className="flex-1 h-px bg-slate-200"></div>
                     </div>
 
                     {layout === 'list' ? (
-                      <div className="bg-white rounded-3xl sm:rounded-4xl border border-slate-200 divide-y divide-slate-50 overflow-hidden shadow-sm">
+                      <div className="mx-2 bg-white rounded-3xl sm:rounded-4xl border border-slate-200 divide-y divide-slate-50 overflow-hidden shadow-sm">
                         {dateSlots.map((slot) => {
                           const isHost = slot.host === user?.email;
                           const isGuest = slot.guest === user?.email;
