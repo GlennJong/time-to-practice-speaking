@@ -105,3 +105,20 @@ export default defineConfig([
 - `npm run build:prod`：production build（由 workflow 注入 base path 與 production secrets）。
 - `npm run build:staging`：staging build（由 workflow 注入 base path 與 staging secrets）。
 
+## Versioning Automation
+
+每次 GitHub Actions 部署都會自動建立版本資訊，並隨部署產出 `version.json`。
+
+- Production version endpoint: `https://<account>.github.io/<repo>/version.json`
+- Staging version endpoint: `https://<account>.github.io/<repo>/staging/version.json`
+
+`version.json` 內容包含：
+
+- env（staging 或 production）
+- version（格式：`<package-version>-<env>.<run-number>+<short-sha>`）
+- packageVersion
+- runNumber
+- commit
+- branch
+- buildTime（UTC）
+
