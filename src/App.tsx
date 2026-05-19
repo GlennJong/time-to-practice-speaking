@@ -46,6 +46,12 @@ const MOCK_SLOTS = (devEmail: string, devName: string): Slot[] => {
 
 const getOnboardingKey = (email: string): string => `onboarding_done_${email.toLowerCase()}`;
 const AUTH_PROFILE_KEY = 'eng_practice_auth_profile';
+const SLOT_DURATION_MS = 60 * 60 * 1000;
+
+type TimeInterval = {
+  startMs: number;
+  endMs: number;
+};
 
 const App: React.FC = () => {
   // --- 狀態管理 ---
@@ -77,7 +83,8 @@ const App: React.FC = () => {
     }
   });
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [newSlots, setNewSlots] = useState<string[]>(['']); 
+  const [newSlots, setNewSlots] = useState<string[]>(['']);
+  const [addSlotErrors, setAddSlotErrors] = useState<string[]>([]);
   const [bookingLink, setBookingLink] = useState<string | null>(null);
   const [showPracticeGuide, setShowPracticeGuide] = useState<boolean>(false);
   const [runOnboarding, setRunOnboarding] = useState<boolean>(false);
@@ -187,6 +194,87 @@ const App: React.FC = () => {
       return acc;
     }, {});
   }, [slots, filterTag, user?.email]);
+
+  const parseInterval = (startValue: string, endValue: string): TimeInterval | null => {
+    const startMs = new Date(startValue).getTime();
+    const endMs = new Date(endValue).getTime();
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return null;
+    return { startMs, endMs };
+  };
+
+  const parseInputSlotInterval = (timeValue: string): TimeInterval | null => {
+    if (!timeValue || timeValue.trim() === '') return null;
+    const startMs = new Date(timeValue).getTime();
+    if (!Number.isFinite(startMs)) return null;
+    return { startMs, endMs: startMs + SLOT_DURATION_MS };
+  };
+
+  const isIntervalOverlap = (a: TimeInterval, b: TimeInterval): boolean => {
+    return a.startMs < b.endMs && b.startMs < a.endMs;
+  };
+
+  const formatHm = (timeMs: number): string => {
+    return new Date(timeMs).toLocaleTimeString('zh-TW', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  };
+
+  const myOccupiedIntervals = useMemo((): TimeInterval[] => {
+    if (!user?.email) return [];
+    return slots
+      .filter((slot) => {
+        const isHostOwned = slot.host === user.email && (slot.status === 'Open' || slot.status === 'Booked');
+        const isGuestBooked = slot.guest === user.email && slot.status === 'Booked';
+        return isHostOwned || isGuestBooked;
+      })
+      .map((slot) => parseInterval(slot.start, slot.end))
+      .filter((interval): interval is TimeInterval => interval !== null);
+  }, [slots, user?.email]);
+
+  const collectAddSlotConflicts = (timeValues: string[]): string[] => {
+    const errors: string[] = [];
+    const intervals = timeValues
+      .map((value, idx) => ({ idx, interval: parseInputSlotInterval(value) }))
+      .filter((item): item is { idx: number; interval: TimeInterval } => item.interval !== null);
+
+    intervals.forEach(({ idx, interval }) => {
+      const overlapWithMine = myOccupiedIntervals.some((occupied) => isIntervalOverlap(interval, occupied));
+      if (overlapWithMine) {
+        errors.push(`第 ${idx + 1} 筆 ${formatHm(interval.startMs)}-${formatHm(interval.endMs)} 與你的既有時段衝突`);
+      }
+    });
+
+    for (let i = 0; i < intervals.length; i += 1) {
+      for (let j = i + 1; j < intervals.length; j += 1) {
+        if (isIntervalOverlap(intervals[i].interval, intervals[j].interval)) {
+          errors.push(`第 ${intervals[i].idx + 1} 筆與第 ${intervals[j].idx + 1} 筆互相重疊`);
+        }
+      }
+    }
+
+    return Array.from(new Set(errors));
+  };
+
+  const getBookBlockReason = (slot: Slot): string | null => {
+    if (!user) return '請先登入';
+    if (slot.status !== 'Open') return '此時段已不可預約';
+    if (slot.host === user.email) return '不可預約自己發布的時段';
+    const targetInterval = parseInterval(slot.start, slot.end);
+    if (!targetInterval) return '時段資料異常，請稍後再試';
+    const overlapWithMine = myOccupiedIntervals.some((occupied) => isIntervalOverlap(targetInterval, occupied));
+    if (overlapWithMine) {
+      return `此時段與你的既有安排重疊 (${formatHm(targetInterval.startMs)}-${formatHm(targetInterval.endMs)})`;
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    if (view !== 'add-slots' && addSlotErrors.length > 0) {
+      setAddSlotErrors([]);
+    }
+  }, [view, addSlotErrors.length]);
 
   // --- API 呼叫 ---
   const callApi = async (action: string, body: Record<string, unknown> = {}): Promise<ApiResponse | null> => {
@@ -344,12 +432,18 @@ const App: React.FC = () => {
     }
     const validSlots = newSlots.filter(s => s !== '');
     if (validSlots.length === 0 || !user) return;
+    const conflicts = collectAddSlotConflicts(validSlots);
+    if (conflicts.length > 0) {
+      setAddSlotErrors(conflicts);
+      return;
+    }
     const ok = await new Promise<boolean>(res => setConfirmState({ open: true, title: '確認發布時段？', description: '確定要發布這些時段到系統嗎？', confirmText: '發布', cancelText: '取消', resolve: res }));
     if (!ok) return;
     const res = await callApi('addSlots', { token: user.token, timeArray: validSlots });
     if (res?.success) {
       setMessage({ type: 'success', text: '已成功發布練習時段' });
       setNewSlots(['']);
+      setAddSlotErrors([]);
       setView('dashboard');
       await fetchSlots(); 
     }
@@ -357,6 +451,13 @@ const App: React.FC = () => {
 
   const handleBook = async (uid: string): Promise<void> => {
     if (!user) return;
+    const targetSlot = slots.find((slot) => slot.uid === uid);
+    if (!targetSlot) return;
+    const blockReason = getBookBlockReason(targetSlot);
+    if (blockReason) {
+      setMessage({ type: 'error', text: blockReason });
+      return;
+    }
     const ok = await new Promise<boolean>(res => setConfirmState({ open: true, title: '確認預約？', description: '確定要預約此時段嗎？', confirmText: '預約', cancelText: '取消', resolve: res }));
     if (!ok) return;
     setActiveSlotId(uid);
@@ -653,6 +754,7 @@ const App: React.FC = () => {
                           const isHost = slot.host === user?.email;
                           const isGuest = slot.guest === user?.email;
                           const canCancelBooking = slot.status === 'Booked' && isGuest && !isHost;
+                          const bookBlockReason = getBookBlockReason(slot);
                           const isCurrentSlotLoading = activeSlotId === slot.uid;
 
                           return (
@@ -687,9 +789,9 @@ const App: React.FC = () => {
                                 {slot.status === 'Open' && !isHost && (
                                   <button 
                                     onClick={() => handleBook(slot.uid)} 
-                                    disabled={isLoading} 
-                                    className="tour-book-slot p-2 sm:px-10 sm:py-3 bg-indigo-600 text-white rounded-xl sm:rounded-[1.25rem] text-xs sm:text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95"
-                                    title="預約"
+                                    disabled={isLoading || !!bookBlockReason} 
+                                    className="tour-book-slot p-2 sm:px-10 sm:py-3 bg-indigo-600 text-white rounded-xl sm:rounded-[1.25rem] text-xs sm:text-sm font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title={bookBlockReason || '預約'}
                                   >
                                     {isCurrentSlotLoading ? (
                                       <Loader2 size={14} className="animate-spin" />
@@ -740,6 +842,7 @@ const App: React.FC = () => {
                           const isHost = slot.host === user?.email;
                           const isGuest = slot.guest === user?.email;
                           const canCancelBooking = slot.status === 'Booked' && isGuest && !isHost;
+                          const bookBlockReason = getBookBlockReason(slot);
                           const isCurrentSlotLoading = activeSlotId === slot.uid;
                           return (
                             <div key={slot.uid} className={`bg-white border-2 rounded-[2rem] p-6 transition-all shadow-sm flex flex-col justify-between gap-6 relative group ${isHost ? 'border-indigo-100 ring-8 ring-indigo-50/50' : 'border-slate-100 hover:border-indigo-100 hover:shadow-xl'}`}>
@@ -760,7 +863,7 @@ const App: React.FC = () => {
                               </div>
                               <div className="flex gap-2 pt-4 border-t border-slate-50">
                                 {slot.status === 'Open' && !isHost && (
-                                  <button onClick={() => handleBook(slot.uid)} disabled={isLoading} className="tour-book-slot flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95">
+                                  <button onClick={() => handleBook(slot.uid)} disabled={isLoading || !!bookBlockReason} title={bookBlockReason || '預約'} className="tour-book-slot flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
                                     {isCurrentSlotLoading ? <Loader2 size={16} className="animate-spin" /> : '預約'}
                                   </button>
                                 )}
@@ -826,9 +929,11 @@ const App: React.FC = () => {
                         value={time} 
                         disabled={isLoading}
                         onChange={(e) => {
+                          const snapped = snapTo30Minutes(e.target.value);
                           const updated = [...newSlots];
-                          updated[idx] = snapTo30Minutes(e.target.value);
+                          updated[idx] = snapped;
                           setNewSlots(updated);
+                          if (addSlotErrors.length > 0) setAddSlotErrors([]);
                         }} 
                         className="slot-datetime-input block w-full min-w-0 px-3 sm:px-6 py-2 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-[1.75rem] focus:ring-8 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-black text-xs sm:text-base tabular-nums transition-all disabled:opacity-40" 
                       />
@@ -841,7 +946,11 @@ const App: React.FC = () => {
                     </div>
                     {newSlots.length > 1 && (
                       <button 
-                        onClick={() => setNewSlots(newSlots.filter((_, i) => i !== idx))} 
+                        onClick={() => {
+                          const updated = newSlots.filter((_, i) => i !== idx);
+                          setNewSlots(updated);
+                          if (addSlotErrors.length > 0) setAddSlotErrors([]);
+                        }} 
                         disabled={isLoading}
                         className="self-center shrink-0 p-2 sm:p-4 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-[1.5rem] transition-all disabled:opacity-20"
                       >
@@ -851,13 +960,25 @@ const App: React.FC = () => {
                   </div>
                 ))}
                 <button 
-                  onClick={() => setNewSlots([...newSlots, ''])} 
+                  onClick={() => {
+                    const updated = [...newSlots, ''];
+                    setNewSlots(updated);
+                    if (addSlotErrors.length > 0) setAddSlotErrors([]);
+                  }} 
                   disabled={isLoading}
                   className="w-full py-5 border-2 border-dashed border-slate-200 rounded-[1.75rem] text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all text-[11px] font-black flex items-center justify-center gap-2 disabled:opacity-30 uppercase tracking-widest"
                 >
                   <Plus size={16} /> Add another slot
                 </button>
               </div>
+
+              {addSlotErrors.length > 0 && (
+                <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800 font-bold leading-relaxed">
+                  {addSlotErrors.map((error) => (
+                    <p key={error}>• {error}</p>
+                  ))}
+                </div>
+              )}
 
               <button 
                 onClick={handleAddSlots} 
