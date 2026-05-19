@@ -1,0 +1,9 @@
+{
+  "env": "staging",
+  "version": "0.0.0-staging.2+5ad9403",
+  "packageVersion": "0.0.0",
+  "runNumber": "2",
+  "commit": "5ad9403",
+  "branch": "staging",
+  "buildTime": "2026-05-19T04:07:28Z"
+}
