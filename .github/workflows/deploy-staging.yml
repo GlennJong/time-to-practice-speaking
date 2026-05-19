@@ -1,9 +1,9 @@
-name: Deploy Production
+name: Deploy Staging
 
 on:
   push:
     branches:
-      - prod
+      - staging
   workflow_dispatch:
 
 jobs:
@@ -28,15 +28,16 @@ jobs:
         run: npm install
 
       - name: Build
-        run: npm run build:prod
+        run: npm run build:staging
         env:
-          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL_PROD }}
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
-        
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL_STAGING }}
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/staging/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: dist
+          destination_dir: staging
           keep_files: true

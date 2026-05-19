@@ -74,7 +74,34 @@ export default defineConfig([
 
 ## Environment Variables
 
-- **VITE_GAS_URL**: 設定為你的 Google Apps Script Web App URL（範例: https://script.google.com/macros/s/xxx/exec）。
+- **VITE_GAS_URL**: 本地開發用的 Google Apps Script Web App URL（範例: https://script.google.com/macros/s/xxx/exec）。
   - 在本地開發可於 `.env` 檔案中加入 `VITE_GAS_URL=...`。
-  - 在 GitHub Actions 部署時，請在 repository secrets 中新增 `VITE_GAS_URL`，工作流程會把它注入到 build 階段。
+
+### GitHub Actions Secrets
+
+以下 secrets 用於 staging/production 分流部署：
+
+- **VITE_GAS_URL_PROD**: production 環境的 GAS URL。
+- **VITE_GAS_URL_STAGING**: staging 環境的 GAS URL。
+
+## Deployment (GitFlow)
+
+- `prod` branch: 觸發 production 部署，發佈到 GitHub Pages 根目錄。
+- `staging` branch: 觸發 staging 部署，發佈到 `staging` 子目錄。
+
+### Workflows
+
+- `.github/workflows/deploy.yml`：production workflow（監聽 `prod`）。
+- `.github/workflows/deploy-staging.yml`：staging workflow（監聽 `staging`）。
+
+### URLs
+
+- Production: `https://<account>.github.io/<repo>/`
+- Staging: `https://<account>.github.io/<repo>/staging/`
+
+### Build Commands
+
+- `npm run build`：一般 build。
+- `npm run build:prod`：production build（由 workflow 注入 base path 與 production secrets）。
+- `npm run build:staging`：staging build（由 workflow 注入 base path 與 staging secrets）。
 
