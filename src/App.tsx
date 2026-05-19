@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Calendar, Clock, Plus, Trash2, ChevronLeft, Mail, ShieldCheck, Loader2, Cpu, Database, Filter, CalendarDays, Info, LayoutGrid, List, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, Plus, Trash2, ChevronLeft, Mail, ShieldCheck, Loader2, Cpu, Database, Filter, CalendarDays, Info, LayoutGrid, List, RefreshCw, CalendarX2 } from 'lucide-react';
 import { Joyride } from 'react-joyride';
 import type { EventData, Step } from 'react-joyride';
 import StatusBadge from './components/StatusBadge';
@@ -369,6 +369,19 @@ const App: React.FC = () => {
     setActiveSlotId(null);
   };
 
+  const handleCancelBooking = async (uid: string): Promise<void> => {
+    if (!user) return;
+    const ok = await new Promise<boolean>(res => setConfirmState({ open: true, title: '確認取消預約？', description: '確定要取消你已預約的時段嗎？', confirmText: '取消預約', cancelText: '保留', resolve: res }));
+    if (!ok) return;
+    setActiveSlotId(uid);
+    const res = await callApi('cancelSlot', { token: user.token, slotUid: uid });
+    if (res?.success) {
+      setMessage({ type: 'success', text: '已取消預約' });
+      await fetchSlots();
+    }
+    setActiveSlotId(null);
+  };
+
   const handleDelete = async (uid: string): Promise<void> => {
     if (!user) return;
     const ok = await new Promise<boolean>(res => setConfirmState({ open: true, title: '確定要取消嗎？', description: '系統會同步移除日曆事件。', confirmText: '取消時段', cancelText: '保留', resolve: res }));
@@ -639,6 +652,7 @@ const App: React.FC = () => {
                         {dateSlots.map((slot) => {
                           const isHost = slot.host === user?.email;
                           const isGuest = slot.guest === user?.email;
+                          const canCancelBooking = slot.status === 'Booked' && isGuest && !isHost;
                           const isCurrentSlotLoading = activeSlotId === slot.uid;
 
                           return (
@@ -696,8 +710,21 @@ const App: React.FC = () => {
                                     {isCurrentSlotLoading ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} className="sm:w-6 sm:h-6" />}
                                   </button>
                                 )}
-                                {slot.status === 'Booked' && isGuest && (
-                                  <span className="px-3 py-2 sm:px-6 sm:py-3 bg-indigo-50 text-indigo-600 rounded-lg sm:rounded-2xl text-[10px] sm:text-xs font-black border border-indigo-100 shadow-sm">已預約</span>
+                                {canCancelBooking && (
+                                  <button
+                                    onClick={() => handleCancelBooking(slot.uid)}
+                                    disabled={isLoading}
+                                    className="tour-book-slot p-2 sm:px-10 sm:py-3 bg-gray-500 text-white rounded-xl sm:rounded-[1.25rem] text-xs sm:text-sm font-black hover:bg-gray-700 shadow-xl shadow-indigo-100 flex items-center gap-2 active:scale-95"
+                                  >
+                                    {isCurrentSlotLoading ? (
+                                      <Loader2 size={14} className="animate-spin" />
+                                    ) : (
+                                      <>
+                                        <CalendarX2 size={16} className="sm:hidden" />
+                                        <span className="hidden sm:inline">取消</span>
+                                      </>
+                                    )}
+                                  </button>
                                 )}
                                 {slot.status === 'Booked' && !isHost && !isGuest && (
                                   <span className="text-[9px] sm:text-[11px] text-slate-300 font-black uppercase tracking-widest bg-slate-50 px-2 py-0.5 sm:px-3 sm:py-1 rounded sm:rounded-lg">已被預約</span>
@@ -712,6 +739,7 @@ const App: React.FC = () => {
                         {dateSlots.map((slot) => {
                           const isHost = slot.host === user?.email;
                           const isGuest = slot.guest === user?.email;
+                          const canCancelBooking = slot.status === 'Booked' && isGuest && !isHost;
                           const isCurrentSlotLoading = activeSlotId === slot.uid;
                           return (
                             <div key={slot.uid} className={`bg-white border-2 rounded-[2rem] p-6 transition-all shadow-sm flex flex-col justify-between gap-6 relative group ${isHost ? 'border-indigo-100 ring-8 ring-indigo-50/50' : 'border-slate-100 hover:border-indigo-100 hover:shadow-xl'}`}>
@@ -741,8 +769,10 @@ const App: React.FC = () => {
                                     {isCurrentSlotLoading ? <Loader2 size={16} className="animate-spin" /> : '取消時段'}
                                   </button>
                                 )}
-                                {slot.status === 'Booked' && isGuest && (
-                                  <div className="flex-1 py-4 bg-indigo-50 text-indigo-600 rounded-2xl text-xs font-black text-center border border-indigo-100">已預約</div>
+                                {canCancelBooking && (
+                                  <button onClick={() => handleCancelBooking(slot.uid)} disabled={isLoading} className="flex-1 py-4 bg-amber-50 text-amber-700 rounded-2xl text-xs font-black text-center border border-amber-200 hover:bg-amber-100 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+                                    {isCurrentSlotLoading ? <Loader2 size={16} className="animate-spin" /> : '取消預約'}
+                                  </button>
                                 )}
                                 {slot.status === 'Booked' && !isHost && !isGuest && (
                                   <div className="flex-1 py-4 bg-slate-50 text-slate-300 rounded-2xl text-[10px] font-black text-center uppercase tracking-widest">Occupied</div>
