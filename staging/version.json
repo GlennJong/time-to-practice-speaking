@@ -1,9 +1,9 @@
 {
   "env": "staging",
-  "version": "0.0.0-staging.3+3daab7d",
-  "packageVersion": "0.0.0",
-  "runNumber": "3",
-  "commit": "3daab7d",
+  "version": "1.0.0-staging.4+efb2072",
+  "packageVersion": "1.0.0",
+  "runNumber": "4",
+  "commit": "efb2072",
   "branch": "staging",
-  "buildTime": "2026-05-19T05:57:20Z"
+  "buildTime": "2026-05-20T03:12:18Z"
 }
