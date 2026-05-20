@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: npm run build:prod
         env:
-          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL_PROD }}
+          VITE_GAS_URL: ${{ secrets.VITE_GAS_URL }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
       - name: Attach version file
