@@ -81,44 +81,134 @@ export default defineConfig([
 
 以下 secrets 用於 staging/production 分流部署：
 
-- **VITE_GAS_URL_PROD**: production 環境的 GAS URL。
-- **VITE_GAS_URL_STAGING**: staging 環境的 GAS URL。
+# Practice2Gether
 
-## Deployment (GitFlow)
+Practice2Gether is a private English speaking practice booking service for a small invited group. Members sign in with email verification, publish available practice slots, book time with other members, and manage their own schedule from a mobile-friendly dashboard.
 
-- `prod` branch: 觸發 production 部署，發佈到 GitHub Pages 根目錄。
-- `staging` branch: 觸發 staging 部署，發佈到 `staging` 子目錄。
+## Features
 
-### Workflows
+- Invite-only access with email + OTP verification.
+- Slot publishing for hosts, with support for adding multiple time slots at once.
+- Automatic 30-minute snapping and 1-hour slot duration when creating new openings.
+- Conflict checks to prevent overlapping slots with your own existing bookings.
+- Booking flow for open slots, including cancel booking and cancel slot actions.
+- Google Meet booking link returned after a successful reservation.
+- List and grid views for browsing schedules.
+- Filters for viewing all slots, your own slots, or other hosts.
+- Manual refresh from the dashboard.
+- First-time onboarding tour that explains how to publish and book slots.
+- Practice guide modal with visual instructions.
+- Local persistence for the last login profile and onboarding state.
+- Developer bypass mode for local testing without the real backend.
+- Responsive layout tuned for mobile and desktop.
 
-- `.github/workflows/deploy.yml`：production workflow（監聽 `prod`）。
-- `.github/workflows/deploy-staging.yml`：staging workflow（監聽 `staging`）。
+## Tech Stack
 
-### URLs
+- Vite
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Google Apps Script backend
+
+## Project Structure
+
+- [src/App.tsx](src/App.tsx) contains the main booking flow, auth flow, onboarding, and dashboard logic.
+- [src/components/](src/components) contains the reusable UI pieces used by the service.
+- [public/](public) stores the static assets used by the app and practice guide.
+
+## Getting Started
+
+### Requirements
+
+- Node.js 18+.
+- npm.
+- A deployed Google Apps Script Web App endpoint for the backend API.
+
+### Install
+
+```bash
+npm install
+```
+
+### Configure Environment
+
+Create a local `.env` file and point the app to your Google Apps Script endpoint:
+
+```bash
+VITE_GAS_URL=https://script.google.com/macros/s/xxx/exec
+```
+
+If `VITE_GAS_URL` is missing, the app shows a service unavailable overlay and blocks normal usage.
+
+### Run Locally
+
+```bash
+npm run dev
+```
+
+Then open the local Vite URL shown in the terminal.
+
+### Build and Check
+
+```bash
+npm run build
+npm run lint
+```
+
+Use these before shipping changes to confirm the app still compiles and passes linting.
+
+## Available Scripts
+
+- `npm run dev`: start the Vite development server.
+- `npm run build`: type-check and build the app for the current environment.
+- `npm run build:prod`: build for production deployment.
+- `npm run build:staging`: build for staging deployment.
+- `npm run lint`: run ESLint.
+- `npm run preview`: preview a production build locally.
+
+## Backend Contract
+
+The frontend talks to a Google Apps Script Web App through `VITE_GAS_URL`.
+
+Expected actions include:
+
+- `requestOTP`
+- `verifyOTP`
+- `getSlots`
+- `addSlots`
+- `bookSlot`
+- `cancelSlot`
+- `deleteSlot`
+
+## Deployment
+
+The repository is set up for GitFlow-style deployment.
+
+- `prod` triggers production deployment to the GitHub Pages root.
+- `staging` triggers staging deployment under the `/staging` path.
+
+Related workflows:
+
+- [.github/workflows/deploy.yml](.github/workflows/deploy.yml) for production.
+- [.github/workflows/deploy-staging.yml](.github/workflows/deploy-staging.yml) for staging.
+
+Published URLs follow this pattern:
 
 - Production: `https://<account>.github.io/<repo>/`
 - Staging: `https://<account>.github.io/<repo>/staging/`
 
-### Build Commands
+Each deployment also emits a `version.json` file with build metadata.
 
-- `npm run build`：一般 build。
-- `npm run build:prod`：production build（由 workflow 注入 base path 與 production secrets）。
-- `npm run build:staging`：staging build（由 workflow 注入 base path 與 staging secrets）。
+## Development Notes
 
-## Versioning Automation
+- Use the developer bypass button on the landing page when you need to test the booking flow without OTP verification.
+- The dashboard shows the next two weeks of active slots and groups them by date.
+- Mobile and desktop layouts are intentionally different, so test both when changing the UI.
+- The app stores the last used name and email in local storage to speed up repeat logins.
 
-每次 GitHub Actions 部署都會自動建立版本資訊，並隨部署產出 `version.json`。
+## Troubleshooting
 
-- Production version endpoint: `https://<account>.github.io/<repo>/version.json`
-- Staging version endpoint: `https://<account>.github.io/<repo>/staging/version.json`
-
-`version.json` 內容包含：
-
-- env（staging 或 production）
-- version（格式：`<package-version>-<env>.<run-number>+<short-sha>`）
-- packageVersion
-- runNumber
-- commit
-- branch
-- buildTime（UTC）
+- If login or slot loading fails, confirm that `VITE_GAS_URL` is set and reachable.
+- If bookings fail unexpectedly, check that the current user does not overlap with an existing slot.
+- If the app opens to a blocking overlay, the backend endpoint is missing from the environment.
 
